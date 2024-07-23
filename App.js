@@ -1,5 +1,4 @@
 import { NavigationContainer } from '@react-navigation/native';
-
 import { createStackNavigator } from '@react-navigation/stack';
 const Stack = createStackNavigator();
 
@@ -13,7 +12,7 @@ export default function App() {
       <Stack.Navigator>
         <Stack.Screen name="Tela1" component={Tela1} />
         <Stack.Screen name="Tela4" component={Tela4} />
-        <Stack.Screen name="Drawer" component={Drawer} options={{ headerShown: false }}/>
+        <Stack.Screen name="Drawer" component={Drawer} options={{ headerShown: false,  } }/>
       </Stack.Navigator>
     </NavigationContainer>
   );

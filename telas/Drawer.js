@@ -7,11 +7,18 @@ import Tela2 from './Tela2';
 import Tela3 from './Tela3';
 
 export default function _Drawer() {
-        return (
-            <Drawer.Navigator>
-                <Drawer.Screen name="Tela2" component={Tela2} />
-                <Drawer.Screen name="Tela3" component={Tela3} />
-            </Drawer.Navigator>
-        );
+    return (
+        <Drawer.Navigator>
+            <Drawer.Screen name="Tela2" component={Tela2} options={{
+                headerTitle: (props) => <></>, 
+                headerStyle: {
+                    backgroundColor: '#000',
+                },
+                headerTintColor: '#fff',
+                
+            }} />
+            <Drawer.Screen name="Tela3" component={Tela3} />
+        </Drawer.Navigator>
+    );
 }
 

@@ -11,11 +11,7 @@ export default function Tela3({ navigation }) {
         <View style={styles.container}>
             <StatusBar style="auto" />
             <Text>TELA 3</Text>
-            <Button
-                onPress={goTela4}
-                title="Botão"
-                color="#841584"
-            />
+            
         </View>
     );
 }
@@ -23,7 +19,7 @@ export default function Tela3({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#000',
         alignItems: 'center',
         justifyContent: 'center',
     },
