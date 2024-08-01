@@ -1,29 +1,13 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Button } from 'react-native';
-import { CommonActions } from '@react-navigation/native';
+import { StyleSheet, Text, View, Image } from 'react-native';
 
-export default function Tela1({ navigation }) {
+export default function Tela2() {
 
-    function goDrawer() {
-        navigation.dispatch(
-            CommonActions.reset({
-              index: 0,
-              routes: [
-                { name: 'Drawer' }
-              ]
-            })
-          );
-    }
-
-    return (
+        return (
         <View style={styles.container}>
-            <StatusBar style="auto" />
-            <Text>TELA 1</Text>
-            <Button
-                onPress={goDrawer}
-                title="Botão"
-                color="#841584"
-            />
+            <Image style={styles.imagemLogo} source={{
+                uri: 'https://upload.wikimedia.org/wikipedia/commons/b/b6/Tibia-logo.png',
+            }} />
         </View>
     );
 }
@@ -35,4 +19,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    imagemLogo: {
+        width: 350,
+        height: 113
+    }
 });

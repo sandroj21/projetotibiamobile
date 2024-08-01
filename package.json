@@ -9,19 +9,31 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo/react-native-action-sheet": "^4.1.0",
     "@react-native-masked-view/masked-view": "0.3.0",
     "@react-navigation/drawer": "^6.6.15",
     "@react-navigation/stack": "^6.3.29",
+    "axios": "^1.7.2",
+    "cheerio": "^1.0.0-rc.12",
     "expo": "~50.0.14",
     "expo-status-bar": "~1.11.1",
+    "express": "^4.19.2",
     "react": "18.2.0",
     "react-native": "0.73.6",
     "react-native-gesture-handler": "~2.14.0",
+    "react-native-html-parser": "^0.1.0",
     "react-native-reanimated": "~3.6.2",
-    "react-native-vector-icons": "^10.1.0"
+    "react-native-vector-icons": "^10.1.0",
+    "react-native-webview": "^13.10.5",
+    "xmldom": "^0.6.0",
+    "xpath": "^0.0.34"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
   },
-  "private": true
+  "private": true,
+  "description": "",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
