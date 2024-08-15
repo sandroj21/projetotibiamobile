@@ -23,8 +23,6 @@ app.get('/character/:name', async (req, res) => {
         const vocation = select("/html/body/div[3]/div[3]/div[3]/div[5]/div/div/div[1]/table/tbody/tr/td/div[2]/table/tbody/tr/td/div/table/tbody/tr[4]/td[2]", doc).toString().trim();
         const status = select("/html/body/div[3]/div[3]/div[3]/div[5]/div/div/div[4]/table/tbody/tr/td/div[2]/table/tbody/tr/td/div/table/tbody/tr[2]/td[3]", doc).toString().trim();
         
-        // Continue com os outros campos de maneira similar, ajustando os XPath conforme necessário
-        
         const characterData = { name, world, residence, level, vocation, status };
         
         res.json(characterData);

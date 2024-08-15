@@ -1,15 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, Modal, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, FlatList, Modal, TouchableOpacity } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 
-const fetchCharacterStatus = async (characterName) => {
+const fetchWorldName = async (characterName) => {
   try {
     const response = await fetch(`https://api.tibiadata.com/v4/character/${characterName}`);
     const data = await response.json();
-    const character = data.character.other_characters.find(c => c.name === characterName);
-    return character ? character.status : 'offline';
+    return data.character ? data.character.character.world : null;
   } catch (error) {
-    console.error('Erro ao buscar status do personagem:', error);
+    console.error('Erro ao buscar o nome do mundo do personagem:', error);
+    return null;
+  }
+};
+
+const fetchWorldStatus = async (worldName, characterName) => {
+  try {
+    const response = await fetch(`https://api.tibiadata.com/v4/world/${worldName}`);
+    const data = await response.json();
+
+    if (data.world && data.world.online_players) {
+      const onlinePlayers = data.world.online_players;
+      const isOnline = onlinePlayers.some(player => player.name === characterName);
+      return isOnline ? 'online' : 'offline';
+    } else {
+      return 'offline';
+    }
+  } catch (error) {
+    console.error('Erro ao buscar status do mundo:', error);
     return 'offline';
   }
 };
@@ -29,7 +46,7 @@ const checkCharacterExists = async (characterName) => {
   try {
     const response = await fetch(`https://api.tibiadata.com/v4/character/${characterName}`);
     const data = await response.json();
-    return !!data.character; // Retorna true se o personagem existe
+    return !!data.character;
   } catch (error) {
     console.error('Erro ao verificar a existência do personagem:', error);
     return false;
@@ -37,7 +54,7 @@ const checkCharacterExists = async (characterName) => {
 };
 
 export default function Tela3() {
-  const isFocused = useIsFocused(); // Hook para saber se a tela está em foco
+  const isFocused = useIsFocused();
   const [vipList, setVipList] = useState([]);
   const [newVIP, setNewVIP] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
@@ -51,53 +68,52 @@ export default function Tela3() {
   const updateStatuses = async () => {
     const updatedStatuses = {};
     for (const vip of vipList) {
-      updatedStatuses[vip.name] = await fetchCharacterStatus(vip.name);
+      const worldName = await fetchWorldName(vip.name);
+      if (worldName) {
+        updatedStatuses[vip.name] = await fetchWorldStatus(worldName, vip.name);
+      } else {
+        updatedStatuses[vip.name] = 'offline';
+      }
     }
     setStatusMap(updatedStatuses);
   };
 
-  // Atualiza o status dos VIPs a cada 1 minuto
   useEffect(() => {
     let interval;
     if (isFocused) {
-      updateStatuses(); // Atualiza o status ao entrar na tela
-      interval = setInterval(updateStatuses, 60000); // Atualiza a cada 1 minuto
+      updateStatuses();
+      interval = setInterval(updateStatuses, 60000);
     }
-    return () => clearInterval(interval); // Limpa o intervalo ao sair da tela
+    return () => clearInterval(interval);
   }, [isFocused, vipList]);
 
-  // Adiciona um novo VIP à lista
   const handleAddVIP = async () => {
     if (newVIP.trim() && !vipList.some(vip => vip.name === newVIP.trim())) {
       const exists = await checkCharacterExists(newVIP.trim());
       if (exists) {
         setVipList([...vipList, { name: newVIP.trim() }]);
         setNewVIP('');
-        setModalVisible(false);  // Fecha o modal após adicionar
-        setErrorMessage('');     // Limpa qualquer mensagem de erro anterior
+        setModalVisible(false);
+        setErrorMessage('');
       } else {
         setErrorMessage('Personagem não encontrado. Por favor, verifique o nome e tente novamente.');
       }
     }
   };
 
-  // Remove um VIP da lista
   const handleRemoveVIP = (name) => {
     setVipList(vipList.filter(vip => vip.name !== name));
   };
 
-  // Limpa toda a lista de VIPs
   const handleClearVIPList = () => {
     setVipList([]);
   };
 
-  // Mostra o menu de opções
   const handleVIPClick = async (name) => {
     setSelectedVIP(name);
     setOptionsModalVisible(true);
   };
 
-  // Buscar informações e mostrar no modal
   const handleFetchInfo = async () => {
     const info = await fetchCharacterInfo(selectedVIP);
     setSelectedCharacter(info);
@@ -105,29 +121,43 @@ export default function Tela3() {
     setInfoModalVisible(true);
   };
 
+  const renderItem = ({ item }) => (
+    <TouchableOpacity
+      style={[styles.vipContainer, { backgroundColor: statusMap[item.name] === 'online' ? 'green' : 'red' }]}
+      onPress={() => handleVIPClick(item.name)}
+    >
+      <Text style={styles.vipName}>{item.name}</Text>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Lista de VIPs</Text>
-      <Button title="Adicionar VIP" onPress={() => setModalVisible(true)} />
+      <View style={styles.legenda}>
+        <Text style={styles.legenda}>Legenda: </Text>
+        <Text style={styles.legendaG}>Online</Text>
+        <Text style={styles.legendaR}>Offline</Text>
 
-      <ScrollView contentContainerStyle={styles.listContainer}>
-        {vipList.map(vip => (
-          <View key={vip.name} style={styles.vipContainer}>
-            <Button
-              title={vip.name}
-              onPress={() => handleVIPClick(vip.name)}
-              color={statusMap[vip.name] === 'online' ? 'green' : 'red'}
-            />
-          </View>
-        ))}
-      </ScrollView>
+      </View>
 
-      {/* Botão para limpar a lista de VIPs */}
+      <Button styles={styles.buttonAdd} color="#0040ff" title="Adicionar VIP" onPress={() => setModalVisible(true)} />
+      {vipList.length > 0 && (
+        <Text style={styles.legendaDetalhes}>Clique nos personagens para mais detalhes</Text>
+      )}
+
+
+      <FlatList
+        data={vipList}
+        renderItem={renderItem}
+        keyExtractor={item => item.name}
+        contentContainerStyle={styles.listContainer}
+        ListEmptyComponent={<Text style={styles.emptyText}>Não há personagens na lista de VIPs</Text>}
+      />
+
       <TouchableOpacity style={styles.clearButton} onPress={handleClearVIPList}>
         <Text style={styles.clearButtonText}>Limpar Lista VIP</Text>
       </TouchableOpacity>
 
-      {/* Modal para adicionar novos VIPs */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -143,14 +173,15 @@ export default function Tela3() {
               value={newVIP}
               onChangeText={setNewVIP}
             />
-            {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
-            <Button title="Adicionar" onPress={handleAddVIP} />
-            <Button title="Cancelar" onPress={() => setModalVisible(false)} color="red" />
+            <View style={styles.botoes}>
+              {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+              <Button color="#0040ff" title="Adicionar" onPress={handleAddVIP} />
+              <Button title="Cancelar" onPress={() => setModalVisible(false)} color="red" />
+            </View>
           </View>
         </View>
       </Modal>
 
-      {/* Modal para opções do VIP */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -159,23 +190,35 @@ export default function Tela3() {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Button title="Buscar informações" onPress={handleFetchInfo} />
-            <Button title="Excluir da VIP" onPress={() => {
-              handleRemoveVIP(selectedVIP);
-              setOptionsModalVisible(false);
-            }} color="red" />
-            <Button title="Cancelar" onPress={() => setOptionsModalVisible(false)} />
+            <TouchableOpacity style={[styles.modalButton, {backgroundColor: 'green'}]} onPress={handleFetchInfo}>
+              <Text style={styles.modalButtonText}>Buscar informações</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.modalButton, styles.modalButtonDelete]}
+              onPress={() => {
+                handleRemoveVIP(selectedVIP);
+                setOptionsModalVisible(false);
+              }}
+            >
+              <Text style={[styles.modalButtonText, styles.modalButtonDeleteText]}>Excluir da VIP</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.modalButton} onPress={() => setOptionsModalVisible(false)}>
+              <Text style={styles.modalButtonText}>Cancelar</Text>
+            </TouchableOpacity>
           </View>
         </View>
+
       </Modal>
 
-      {/* Modal para mostrar informações do personagem */}
       <Modal
         animationType="slide"
         transparent={true}
         visible={infoModalVisible}
         onRequestClose={() => setInfoModalVisible(false)}
       >
+        
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             {selectedCharacter ? (
@@ -187,6 +230,9 @@ export default function Tela3() {
                 <Text>World: {selectedCharacter.world}</Text>
                 <Text>Residence: {selectedCharacter.residence}</Text>
                 <Text>Last Login: {selectedCharacter.last_login}</Text>
+
+                
+                
                 <Button title="Fechar" onPress={() => setInfoModalVisible(false)} color="red" />
               </>
             ) : (
@@ -203,9 +249,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
   },
   title: {
+    color: '#fff',
     fontSize: 24,
     marginBottom: 16,
   },
@@ -213,7 +260,14 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   vipContainer: {
-    marginVertical: 8,
+    marginTop: 10,
+    marginVertical: 2,
+    borderRadius: 5,
+    padding: 10,
+    alignItems: 'center',
+  },
+  vipName: {
+    color: '#fff'
   },
   clearButton: {
     marginVertical: 16,
@@ -230,29 +284,89 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   modalContent: {
-    width: '80%',
-    padding: 16,
+    width: '85%',
+    padding: 20,
+    justifyContent: 'space-between',
     backgroundColor: '#fff',
-    borderRadius: 8,
+    borderRadius: 15,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
   modalTitle: {
-    fontSize: 18,
-    marginBottom: 12,
+    fontSize: 20,
+    marginBottom: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  modalButton: {
+    backgroundColor: '#0040ff',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginVertical: 8,
+    width: '100%',
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  modalButtonDelete: {
+    backgroundColor: 'red',
+  },
+  modalButtonDeleteText: {
+    color: '#fff',
+  },
+
+  legendaDetalhes: {
+    marginTop: 2,
+    color: '#fff',
+    fontSize: 10
+  },
+  botoes: {
+    flexDirection: 'row',
+    padding: 5,
+    justifyContent: 'space-around',
+    width: '80%'
   },
   input: {
     height: 40,
-    borderColor: 'gray',
+    borderColor: '#ccc',
     borderWidth: 1,
+    borderRadius: 8,
     marginBottom: 16,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     width: '100%',
   },
   errorText: {
     color: 'red',
     marginBottom: 16,
   },
+  legenda: {
+    flexDirection: 'row',
+    color: '#fff'
+  },
+  legendaG: {
+    marginBottom: 10,
+    color: '#0f0',
+    paddingRight: 5
+  },
+  legendaR: {
+    color: '#f00'
+  },
+  emptyText: {
+    color: '#fff',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 20,
+  }
 });
